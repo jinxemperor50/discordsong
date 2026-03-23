@@ -32,7 +32,24 @@ client.on('messageCreate', async (message) => {
       adapterCreator: message.guild.voiceAdapterCreator,
     });
 
-    const stream = await play.stream(url);
+  try {
+  const ytInfo = await play.video_info(url);
+  const stream = await play.stream(ytInfo.video_details.url);
+
+  const resource = createAudioResource(stream.stream, {
+    inputType: stream.type
+  });
+
+  const player = createAudioPlayer();
+  player.play(resource);
+  connection.subscribe(player);
+
+  message.reply(`Memutar: ${ytInfo.video_details.title} 🎶`);
+
+} catch (error) {
+  console.error(error);
+  message.reply('Gagal memutar lagu! Coba link lain.');
+}
     const resource = createAudioResource(stream.stream, {
       inputType: stream.type
     });
