@@ -1,13 +1,12 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const { joinVoiceChannel, createAudioPlayer, createAudioResource } = require('@discordjs/voice');
-const play = require('play-dl');
+const { joinVoiceChannel } = require('@discordjs/voice');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates
+    GatewayIntentBits.MessageContent
   ]
 });
 
@@ -16,50 +15,33 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
-  if (message.content.startsWith('!play')) {
 
-    const args = message.content.split(' ');
-    const url = args[1];
+  // COMMAND JOIN
+  if (message.content === '!join') {
+    const channel = message.member.voice.channel;
 
-    if (!url) return message.reply('Masukkan link YouTube!');
+    if (!channel) {
+      return message.reply('Masuk voice channel dulu!');
+    }
 
-    const voiceChannel = message.member.voice.channel;
-    if (!voiceChannel) return message.reply('Masuk voice channel dulu!');
-
-    const connection = joinVoiceChannel({
-      channelId: voiceChannel.id,
+    joinVoiceChannel({
+      channelId: channel.id,
       guildId: message.guild.id,
       adapterCreator: message.guild.voiceAdapterCreator,
     });
 
-  try {
-  const ytInfo = await play.video_info(url);
-  const stream = await play.stream(ytInfo.video_details.url);
-
-  const resource = createAudioResource(stream.stream, {
-    inputType: stream.type
-  });
-
-  const player = createAudioPlayer();
-  player.play(resource);
-  connection.subscribe(player);
-
-  message.reply(`Memutar: ${ytInfo.video_details.title} 🎶`);
-
-} catch (error) {
-  console.error(error);
-  message.reply('Gagal memutar lagu! Coba link lain.');
-}
-    const resource = createAudioResource(stream.stream, {
-      inputType: stream.type
-    });
-
-    const player = createAudioPlayer();
-    player.play(resource);
-    connection.subscribe(player);
-
-    message.reply('Memutar lagu 🎶');
+    message.reply('Bot masuk voice channel ✅');
   }
+
+  // COMMAND LEAVE (opsional)
+  if (message.content === '!leave') {
+    const connection = getVoiceConnection(message.guild.id);
+    if (connection) {
+      connection.destroy();
+      message.reply('Bot keluar voice ❌');
+    }
+  }
+
 });
 
 client.login(process.env.TOKEN);
