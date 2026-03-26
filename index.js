@@ -3,6 +3,8 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 const { createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const prism = require('prism-media');
+const { EmbedBuilder } = require('discord.js');
+const channel = member.guild.channels.cache.get('1384054007559094415');
 
 const client = new Client({
   intents: [
@@ -81,6 +83,17 @@ client.on('voiceStateUpdate', (oldState, newState) => {
       playSilent(connection);
     }
   }
+});
+
+client.on('guildMemberAdd', (member) => {
+  const channel = member.guild.channels.cache.get('ID_CHANNEL_KAMU');
+
+  const embed = new EmbedBuilder()
+    .setTitle('Welcome 🎉')
+    .setDescription(`Halo ${member}, selamat datang di **${member.guild.name}**!`)
+    .setColor('Green');
+
+  channel.send({ embeds: [embed] });
 });
 
 client.login(process.env.TOKEN);
