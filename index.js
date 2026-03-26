@@ -4,7 +4,6 @@ const { joinVoiceChannel } = require('@discordjs/voice');
 const { createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const prism = require('prism-media');
 const { EmbedBuilder } = require('discord.js');
-const channel = member.guild.channels.cache.get('1384054007559094415');
 
 const client = new Client({
   intents: [
@@ -87,7 +86,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
 client.on('guildMemberAdd', (member) => {
   const channel = member.guild.channels.cache.get('1384054007559094415');
-
+  
   const embed = new EmbedBuilder()
     .setTitle('Welcome 🎉')
     .setDescription(`Halo ${member}, selamat datang di **${member.guild.name}**!`)
