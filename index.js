@@ -238,6 +238,19 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   } catch (err) {
     console.log('VOICE ERROR:', err);
   }
+
+  if (oldState.member.id === client.user.id && !newState.channelId) {
+    const channel = oldState.channel;
+    if (channel) {
+      const connection = joinVoiceChannel({
+        channelId: channel.id,
+        guildId: channel.guild.id,
+        adapterCreator: channel.guild.voiceAdapterCreator,
+      });
+
+      playSilent(connection);
+    }
+  }
 });
 client.on('guildMemberAdd', (member) => {
   const channel = member.guild.channels.cache.get('1384054007559094415');
