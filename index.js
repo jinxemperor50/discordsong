@@ -173,10 +173,11 @@ client.on('messageCreate', async (message) => {
 });
 
 
-client.on('voiceStateUpdate', (oldState, newState) => {
+client.on('voiceStateUpdate', async (oldState, newState) => {
   const userId = newState.id;
 
   let user = await User.findOne({ userId });
+
   if (!user) {
     user = new User({ userId });
   }
@@ -196,19 +197,6 @@ client.on('voiceStateUpdate', (oldState, newState) => {
   }
 
   await user.save();
-  
-  if (oldState.member.id === client.user.id && !newState.channelId) {
-    const channel = oldState.channel;
-    if (channel) {
-      const connection = joinVoiceChannel({
-        channelId: channel.id,
-        guildId: channel.guild.id,
-        adapterCreator: channel.guild.voiceAdapterCreator,
-      });
-
-      playSilent(connection);
-    }
-  }
 });
 
 client.on('guildMemberAdd', (member) => {
