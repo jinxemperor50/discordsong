@@ -29,13 +29,39 @@ const client = new Client({
   ]
 });
 
-// ===== 🔥 SILENT MESSAGE FUNCTION =====
+// ===== 🔕 SILENT MESSAGE =====
 function sendSilent(channel, options) {
   return channel.send({
     ...options,
     flags: 4096,
     allowedMentions: { repliedUser: false }
   });
+}
+
+// ===== 🏆 RANK SYSTEM =====
+function getRank(level) {
+  if (level >= 50) return '🏆 Legend';
+  if (level >= 40) return '💎 Diamond';
+  if (level >= 30) return '🟣 Platinum';
+  if (level >= 20) return '🔵 Gold';
+  if (level >= 10) return '🟢 Silver';
+  return '🟤 Bronze';
+}
+
+function getRankColor(level) {
+  if (level >= 50) return 0xff0000;
+  if (level >= 40) return 0x00ffff;
+  if (level >= 30) return 0xff00ff;
+  if (level >= 20) return 0xffd700;
+  if (level >= 10) return 0x00ff00;
+  return 0x8b4513;
+}
+
+function createProgressBar(current, max, size = 10) {
+  const percentage = current / max;
+  const progress = Math.round(size * percentage);
+  const empty = size - progress;
+  return '▰'.repeat(progress) + '▱'.repeat(empty);
 }
 
 // ===== VOICE STAY =====
@@ -84,7 +110,16 @@ client.on('messageCreate', async (message) => {
     user.xp = 0;
 
     sendSilent(message.channel, {
-      content: `🎉 ${message.author.username} naik ke level ${user.level}!`
+      embeds: [{
+        title: '🎉 LEVEL UP!',
+        description: `
+🔥 ${message.author.username} naik level!
+
+⭐ Level: ${user.level}
+🏆 Rank: ${getRank(user.level)}
+        `,
+        color: 0xffd700
+      }]
     });
   }
 
@@ -92,8 +127,25 @@ client.on('messageCreate', async (message) => {
 
   // ===== LEVEL =====
   if (message.content === '!level' || message.content === '!lv') {
+
+    const rank = getRank(user.level);
+    const maxXP = user.level * 100;
+    const bar = createProgressBar(user.xp, maxXP);
+
     return sendSilent(message.channel, {
-      content: `📊 Level: ${user.level}\nXP: ${user.xp}/${user.level * 100}`
+      embeds: [{
+        title: '📊 Profile Rank',
+        description: `
+👤 **User:** ${message.author.username}
+
+🏆 **Rank:** ${rank}
+⭐ **Level:** ${user.level}
+
+📈 **XP:** ${user.xp}/${maxXP}
+${bar}
+        `,
+        color: getRankColor(user.level)
+      }]
     });
   }
 
@@ -119,12 +171,13 @@ client.on('messageCreate', async (message) => {
       totalTime += Date.now() - user.joinTime;
     }
 
-    const seconds = Math.floor(totalTime / 1000);
-    const minutes = Math.floor(seconds / 60);
+    const totalSeconds = Math.floor(totalTime / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
     const hours = Math.floor(minutes / 60);
+    const seconds = totalSeconds % 60;
 
     return sendSilent(message.channel, {
-      content: `🎤 Kamu sudah di voice selama: ${hours} jam ${minutes % 60} menit`
+      content: `🎤 Kamu di voice selama: ${hours} jam ${minutes % 60} menit ${seconds} detik`
     });
   }
 
