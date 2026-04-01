@@ -14,7 +14,9 @@ mongoose.connect(process.env.MONGO_URI)
 const userSchema = new mongoose.Schema({
   userId: String,
   xp: { type: Number, default: 0 },
-  level: { type: Number, default: 1 }
+  level: { type: Number, default: 1 },
+  voiceTime: { type: Number, default: 0 },
+  joinTime: { type: Number, default: null }
 });
 const User = mongoose.model('User', userSchema);
 const xp = {};
@@ -97,6 +99,51 @@ client.on('messageCreate', async (message) => {
 
     message.channel.send(text);
   }
+  // ===== COMMAND VOICE LEADERBOARD =====
+  if (message.content === '!voice') {
+  const user = await User.findOne({ userId: message.author.id });
+
+  if (!user) return message.reply('Belum ada data.');
+
+  let totalTime = user.voiceTime;
+
+  // kalau lagi di voice
+  if (user.joinTime) {
+    totalTime += Date.now() - user.joinTime;
+  }
+
+  const seconds = Math.floor(totalTime / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+
+  message.reply(
+    `🎤 Kamu sudah di voice selama: ${hours} jam ${minutes % 60} menit`
+  );
+}
+
+  if (message.content === '!voiceleaderboard') {
+
+  const topUsers = await User.find()
+    .sort({ voiceTime: -1 })
+    .limit(5);
+
+  let text = '🏆 **Voice Leaderboard**\n\n';
+
+  for (let i = 0; i < topUsers.length; i++) {
+    const data = topUsers[i];
+
+    const user = await message.client.users.fetch(data.userId);
+
+    const totalSeconds = Math.floor(data.voiceTime / 1000);
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    text += `${i + 1}. ${user.username} - ${hours} jam ${minutes} menit\n`;
+  }
+
+  message.channel.send(text);
+}
   // COMMAND JOIN
   if (message.content === '!join') {
   const channel = message.member.voice.channel;
@@ -129,6 +176,29 @@ client.on('messageCreate', async (message) => {
 
 
 client.on('voiceStateUpdate', (oldState, newState) => {
+  const userId = newState.id;
+
+  let user = await User.findOne({ userId });
+  if (!user) {
+    user = new User({ userId });
+  }
+
+  // JOIN VOICE
+  if (!oldState.channelId && newState.channelId) {
+    user.joinTime = Date.now();
+  }
+
+  // LEAVE VOICE
+  if (oldState.channelId && !newState.channelId) {
+    if (user.joinTime) {
+      const duration = Date.now() - user.joinTime;
+      user.voiceTime += duration;
+      user.joinTime = null;
+    }
+  }
+
+  await user.save();
+  
   if (oldState.member.id === client.user.id && !newState.channelId) {
     const channel = oldState.channel;
     if (channel) {
