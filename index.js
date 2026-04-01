@@ -176,7 +176,7 @@ client.on('messageCreate', async (message) => {
 client.on('voiceStateUpdate', async (oldState, newState) => {
   if (!newState.member || newState.member.user.bot) return;
 
-  const userId = newState.id;
+  const userId = newState.id; // ✅ TARUH DI ATAS
 
   let user = await User.findOne({ userId });
 
@@ -184,10 +184,12 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
     user = new User({ userId });
   }
 
+  // JOIN VOICE
   if (!oldState.channelId && newState.channelId) {
     user.joinTime = Date.now();
   }
 
+  // LEAVE VOICE
   if (oldState.channelId && !newState.channelId) {
     if (user.joinTime) {
       const duration = Date.now() - user.joinTime;
@@ -198,7 +200,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 
   await user.save();
 });
-
 client.on('guildMemberAdd', (member) => {
   const channel = member.guild.channels.cache.get('1384054007559094415');
   
