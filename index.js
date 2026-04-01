@@ -54,13 +54,16 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
-  const userId = message.author.id; // ✅ HARUS PALING ATAS
-  let user = await User.findOne({ userId });
   if (message.author.bot) return;
+
+  const userId = message.author.id;
+
+  if (!userId) return; // ✅ TAMBAHKAN DI SINI
+
+  let user = await User.findOne({ userId });
 
   if (!user) {
     user = new User({ userId });
-    await user.save();
   }
 
   // tambah XP
@@ -119,24 +122,33 @@ client.on('messageCreate', async (message) => {
 }
 
   if (message.content === '!voiceleaderboard') {
-
-  const topUsers = await User.find()
-    .sort({ voiceTime: -1 })
-    .limit(5);
+  if (!data.userId) continue; // ✅ SKIP DATA ERROR
+  const user = await message.client.users.fetch(data.userId);
+  const topUsers = await User.find({
+    userId: { $ne: null } // ✅ FILTER NULL
+  })
+  .sort({ voiceTime: -1 })
+  .limit(5);
 
   let text = '🏆 **Voice Leaderboard**\n\n';
 
   for (let i = 0; i < topUsers.length; i++) {
     const data = topUsers[i];
 
-    const user = await message.client.users.fetch(data.userId);
+    if (!data.userId) continue; // ✅ extra safety
 
-    const totalSeconds = Math.floor(data.voiceTime / 1000);
-    const totalMinutes = Math.floor(totalSeconds / 60);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
+    try {
+      const user = await message.client.users.fetch(data.userId);
 
-    text += `${i + 1}. ${user.username} - ${hours} jam ${minutes} menit\n`;
+      const totalSeconds = Math.floor(data.voiceTime / 1000);
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      const hours = Math.floor(totalMinutes / 60);
+
+      text += `${i + 1}. ${user.username} - ${hours} jam\n`;
+
+    } catch (err) {
+      console.log('User fetch error:', err);
+    }
   }
 
   message.channel.send(text);
@@ -176,12 +188,14 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   try {
     if (!newState.member || newState.member.user.bot) return;
 
-    const userIdV = newState.id; // ✅ HARUS PALING ATAS
+    const userId = newState.id;
 
-    let user = await User.findOne({ userIdV });
+    if (!userId) return; // ✅ TAMBAHKAN DI SINI
+
+    let user = await User.findOne({ userId });
 
     if (!user) {
-      user = new User({ userIdV, voiceTime: 0, joinTime: null });
+    user = new User({ userId });
     }
 
     // JOIN VOICE
