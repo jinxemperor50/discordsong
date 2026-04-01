@@ -4,6 +4,7 @@ const { joinVoiceChannel } = require('@discordjs/voice');
 const { createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const prism = require('prism-media');
 const { EmbedBuilder } = require('discord.js');
+const xp = {};
 
 const client = new Client({
   intents: [
@@ -39,6 +40,39 @@ client.once('ready', () => {
 
 client.on('messageCreate', async (message) => {
 
+  // ===== XP SYSTEM =====
+  const userId = message.author.id;
+
+  if (!xp[userId]) {
+    xp[userId] = { xp: 0, level: 1 };
+  }
+
+  const randomXP = Math.floor(Math.random() * 10) + 5;
+  xp[userId].xp += randomXP;
+
+  const nextLevelXP = xp[userId].level * 100;
+
+  if (xp[userId].xp >= nextLevelXP) {
+    xp[userId].level += 1;
+    xp[userId].xp = 0;
+
+    message.channel.send(
+      `🎉 ${message.author} naik ke level ${xp[userId].level}!`
+    );
+  }
+
+  // ===== COMMAND !LEVEL =====
+  if (message.content === '!level') {
+  const user = xp[userId];
+  const neededXP = user.level * 100;
+
+  message.reply(
+    `🎮 **LEVEL KAMU**\n` +
+    `Level: ${user.level}\n` +
+    `XP: ${user.xp} / ${neededXP}`
+  );
+}
+  
   // COMMAND JOIN
   if (message.content === '!join') {
   const channel = message.member.voice.channel;
@@ -68,6 +102,7 @@ client.on('messageCreate', async (message) => {
   }
 
 });
+
 
 client.on('voiceStateUpdate', (oldState, newState) => {
   if (oldState.member.id === client.user.id && !newState.channelId) {
