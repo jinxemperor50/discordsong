@@ -65,6 +65,12 @@ client.on('messageCreate', async (message) => {
   if (!user) {
     user = new User({ userId });
   }
+  const send = (channel, text) => {
+    channel.send({
+    content: text,
+    flags: 4096
+    });
+  };
 //////////////////////////Tambahakan Command Dibawah Ini////////////////////////////////
 
   
