@@ -65,7 +65,9 @@ client.on('messageCreate', async (message) => {
   if (!user) {
     user = new User({ userId });
   }
+//////////////////////////Tambahakan Command Dibawah Ini////////////////////////////////
 
+  
   // tambah XP
   const randomXP = Math.floor(Math.random() * 10) + 5;
   user.xp += randomXP;
@@ -82,12 +84,12 @@ client.on('messageCreate', async (message) => {
   await user.save();
 
   // ===== COMMAND !LEVEL =====
-  if (message.content === '!level') {
+  if (message.content === '!level' || message.content === '!lv') {
     message.reply(`📊 Level: ${user.level}\nXP: ${user.xp}/${user.level * 100}`);
   }
 
   // ===== COMMAND LEADERBOARD =====
-  if (message.content === '!leaderboard') {
+  if (message.content === '!leaderboard' || message.content === '!lb') {
     const topUsers = await User.find().sort({ level: -1, xp: -1 }).limit(5);
 
     let text = '🏆 **Leaderboard**\n\n';
@@ -100,7 +102,7 @@ client.on('messageCreate', async (message) => {
     message.channel.send(text);
   }
   // ===== COMMAND VOICE LEADERBOARD =====
-  if (message.content === '!voice') {
+  if (message.content === '!voice' || message.content === '!v') {
   const user = await User.findOne({ userId: message.author.id });
 
   if (!user) return message.reply('Belum ada data.');
@@ -121,7 +123,7 @@ client.on('messageCreate', async (message) => {
   );
 }
 
-  if (message.content === '!voiceleaderboard') {
+  if (message.content === '!voiceleaderboard' || message.content === '!vlb') {
 
   const topUsers = await User.find({
     userId: { $ne: null }
@@ -149,8 +151,14 @@ client.on('messageCreate', async (message) => {
       const totalSeconds = Math.floor(totalTime / 1000);
       const minutes = Math.floor(totalSeconds / 60);
       const hours = Math.floor(minutes / 60);
+      const seconds = totalSeconds % 60;
 
-      text += `${rank}. ${user.username} - ${hours} jam\n`;
+      let timeText = '';
+      if (hours > 0) timeText += `${hours} jam `;
+      if (minutes > 0) timeText += `${minutes} menit `;
+      if (seconds > 0) timeText += `${seconds} detik`;
+      
+      text += `${rank}. ${user.username} - ${timeText}\n`;
       rank++;
 
     } catch (err) {
