@@ -54,6 +54,7 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
+  const userId = message.author.id; // ✅ HARUS PALING ATAS
   let user = await User.findOne({ userId });
   if (message.author.bot) return;
 
