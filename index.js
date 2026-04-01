@@ -54,12 +54,10 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
-
+  let user = await User.findOne({ userId });
   if (message.author.bot) return;
 
   const userId = message.author.id;
-
-  let user = await User.findOne({ userId });
 
   if (!user) {
     user = new User({ userId });
