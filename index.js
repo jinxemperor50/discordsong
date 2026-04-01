@@ -58,8 +58,6 @@ client.on('messageCreate', async (message) => {
   let user = await User.findOne({ userId });
   if (message.author.bot) return;
 
-  const userId = message.author.id;
-
   if (!user) {
     user = new User({ userId });
     await user.save();
