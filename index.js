@@ -174,31 +174,36 @@ client.on('messageCreate', async (message) => {
 
 
 client.on('voiceStateUpdate', async (oldState, newState) => {
-  if (!newState.member || newState.member.user.bot) return;
+  try {
+    if (!newState.member || newState.member.user.bot) return;
 
-  const userId = newState.id; // ✅ TARUH DI ATAS
+    const userId = newState.id; // ✅ HARUS PALING ATAS
 
-  let user = await User.findOne({ userId });
+    let user = await User.findOne({ userId });
 
-  if (!user) {
-    user = new User({ userId });
-  }
-
-  // JOIN VOICE
-  if (!oldState.channelId && newState.channelId) {
-    user.joinTime = Date.now();
-  }
-
-  // LEAVE VOICE
-  if (oldState.channelId && !newState.channelId) {
-    if (user.joinTime) {
-      const duration = Date.now() - user.joinTime;
-      user.voiceTime += duration;
-      user.joinTime = null;
+    if (!user) {
+      user = new User({ userId, voiceTime: 0, joinTime: null });
     }
-  }
 
-  await user.save();
+    // JOIN VOICE
+    if (!oldState.channelId && newState.channelId) {
+      user.joinTime = Date.now();
+    }
+
+    // LEAVE VOICE
+    if (oldState.channelId && !newState.channelId) {
+      if (user.joinTime) {
+        const duration = Date.now() - user.joinTime;
+        user.voiceTime += duration;
+        user.joinTime = null;
+      }
+    }
+
+    await user.save();
+
+  } catch (err) {
+    console.log('VOICE ERROR:', err);
+  }
 });
 client.on('guildMemberAdd', (member) => {
   const channel = member.guild.channels.cache.get('1384054007559094415');
