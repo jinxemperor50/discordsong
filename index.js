@@ -122,32 +122,33 @@ client.on('messageCreate', async (message) => {
 }
 
   if (message.content === '!voiceleaderboard') {
-  if (!data.userId) continue; // ✅ SKIP DATA ERROR
-  const user = await message.client.users.fetch(data.userId);
+
   const topUsers = await User.find({
-    userId: { $ne: null } // ✅ FILTER NULL
+    userId: { $ne: null }
   })
   .sort({ voiceTime: -1 })
   .limit(5);
 
-  let text = '🏆 **Voice Leaderboard**\n\n';
+  let text = '🏆 Voice Leaderboard\n\n';
 
-  for (let i = 0; i < topUsers.length; i++) {
-    const data = topUsers[i];
+  let rank = 1;
 
-    if (!data.userId) continue; // ✅ extra safety
+  for (const data of topUsers) {
+
+    if (!data.userId) continue;
 
     try {
       const user = await message.client.users.fetch(data.userId);
 
       const totalSeconds = Math.floor(data.voiceTime / 1000);
-      const totalMinutes = Math.floor(totalSeconds / 60);
-      const hours = Math.floor(totalMinutes / 60);
+      const minutes = Math.floor(totalSeconds / 60);
+      const hours = Math.floor(minutes / 60);
 
-      text += `${i + 1}. ${user.username} - ${hours} jam\n`;
+      text += `${rank}. ${user.username} - ${hours} jam\n`;
+      rank++;
 
     } catch (err) {
-      console.log('User fetch error:', err);
+      console.log('Fetch error:', err);
     }
   }
 
