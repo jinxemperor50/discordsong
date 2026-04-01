@@ -125,29 +125,116 @@ client.on('messageCreate', async (message) => {
 
   await user.save();
 
+  // ===== PROFILE CMD=====
+  if (message.content === '!profile' || message.content === '!p') {
+
+  const userData = await User.findOne({ userId: message.author.id });
+
+  if (!userData) {
+    return message.reply({
+      content: '❌ Data kamu belum ada.',
+      flags: 4096
+    });
+  }
+
+  // ===== RANK SYSTEM (PROFILE)=====
+  const rank = getRank(userData.level);
+  const maxXP = userData.level * 100;
+
+  // ===== PROGRESS BAR (PROFILE) =====
+  const bar = createProgressBar(userData.xp, maxXP);
+
+  // ===== VOICE TIME (PROFILE) =====
+  let totalTime = userData.voiceTime || 0;
+
+  if (userData.joinTime) {
+    totalTime += Date.now() - userData.joinTime;
+  }
+
+  const totalSeconds = Math.floor(totalTime / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const voiceText = `
+  ${hours > 0 ? `⏰ ${hours} jam\n` : ''}
+  ${minutes > 0 ? `🕐 ${minutes} menit\n` : ''}
+  ⏱️ ${seconds} detik
+  `;
+
+  // ===== GLOBAL RANK (PROFILE) =====
+  const allUsers = await User.find().sort({ level: -1, xp: -1 });
+
+  const rankPosition = allUsers.findIndex(
+    u => u.userId === message.author.id
+  ) + 1;
+
+  // ===== EMBED (PROFILE) =====
+  return message.reply({
+    embeds: [
+      {
+        author: {
+          name: `${message.author.username}`,
+          icon_url: message.author.displayAvatarURL()
+        },
+        title: '📊 USER PROFILE',
+        description: `
+        ━━━━━━━━━━━━━━━━━━
+        
+        🏆 **Rank:** ${rank}
+        ⭐ **Level:** ${userData.level}
+        📊 **XP:** ${userData.xp}/${maxXP}
+        
+        ${bar}
+        
+        ━━━━━━━━━━━━━━━━━━
+        
+        🎤 **Voice Activity**
+        ${voiceText}
+        
+        ━━━━━━━━━━━━━━━━━━
+        
+        🏅 **Global Rank:** #${rankPosition}
+        
+        ━━━━━━━━━━━━━━━━━━
+        `,
+        color: getRankColor(userData.level),
+        footer: {
+          text: 'Profile System • Yukii Bot'
+        },
+        timestamp: new Date()
+      }
+    ],
+    allowedMentions: { repliedUser: true },
+    flags: 4096 // 🔕 silent
+  });
+}
+  
   // ===== LEVEL =====
   if (message.content === '!level' || message.content === '!lv') {
 
-    const rank = getRank(user.level);
-    const maxXP = user.level * 100;
-    const bar = createProgressBar(user.xp, maxXP);
+  const rank = getRank(user.level);
+  const maxXP = user.level * 100;
+  const bar = createProgressBar(user.xp, maxXP);
 
-    return sendSilent(message.channel, {
-      embeds: [{
-        title: '📊 Profile Rank',
-        description: `
-👤 **User:** ${message.author.username}
-
-🏆 **Rank:** ${rank}
-⭐ **Level:** ${user.level}
-
-📈 **XP:** ${user.xp}/${maxXP}
-${bar}
-        `,
-        color: getRankColor(user.level)
-      }]
-    });
-  }
+  return message.reply({
+    embeds: [{
+      title: '📊 Profile Rank',
+      description: `
+        👤 **User:** ${message.author.username}
+        
+        🏆 **Rank:** ${rank}
+        ⭐ **Level:** ${user.level}
+        
+        📈 **XP:** ${user.xp}/${maxXP}
+        ${bar}
+       `,
+      color: getRankColor(user.level)
+    }],
+    allowedMentions: { repliedUser: true }, // ✅ mention user
+    flags: 4096 // 🔕 tetap silent
+  });
+}
 
   // ===== LEADERBOARD =====
   if (message.content === '!leaderboard' || message.content === '!lb') {
