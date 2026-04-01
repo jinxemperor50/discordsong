@@ -177,12 +177,12 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   try {
     if (!newState.member || newState.member.user.bot) return;
 
-    const userId = newState.id; // ✅ HARUS PALING ATAS
+    const userIdV = newState.id; // ✅ HARUS PALING ATAS
 
-    let user = await User.findOne({ userId });
+    let user = await User.findOne({ userIdV });
 
     if (!user) {
-      user = new User({ userId, voiceTime: 0, joinTime: null });
+      user = new User({ userIdV, voiceTime: 0, joinTime: null });
     }
 
     // JOIN VOICE
