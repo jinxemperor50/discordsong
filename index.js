@@ -140,7 +140,13 @@ client.on('messageCreate', async (message) => {
     try {
       const user = await message.client.users.fetch(data.userId);
 
-      const totalSeconds = Math.floor(data.voiceTime / 1000);
+      let totalTime = data.voiceTime || 0;
+      // kalau masih di voice → tambahkan waktu sekarang
+      if (data.joinTime) {
+        totalTime += Date.now() - data.joinTime;
+      }
+      
+      const totalSeconds = Math.floor(totalTime / 1000);
       const minutes = Math.floor(totalSeconds / 60);
       const hours = Math.floor(minutes / 60);
 
