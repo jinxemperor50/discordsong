@@ -346,6 +346,57 @@ client.on('messageCreate', async (message) => {
       });
     }
   }
+
+  // ===== HELP COMMAND BOT =====
+  if (
+  message.content === '!help' ||
+  message.content === '!yuki' ||
+  message.content === '!cmd' ||
+  message.content === '!commands'
+  ) {
+
+    return message.reply({
+    embeds: [
+      {
+        title: '📖 DAFTAR COMMAND BOT',
+        description: `
+        ━━━━━━━━━━━━━━━━━━
+        
+        🎮 **GENERAL**
+        \`!help\` / \`!cmd\` → Lihat semua command  
+        \`!profile\` / \`!p\` → Lihat profile lengkap  
+        
+        ━━━━━━━━━━━━━━━━━━
+        
+        🏆 **LEVEL SYSTEM**
+        \`!level\` / \`!lv\` → Cek level kamu  
+        \`!leaderboard\` / \`!lb\` → Rank leaderboard  
+        
+        ━━━━━━━━━━━━━━━━━━
+        
+        🎤 **VOICE SYSTEM**
+        \`!voice\` / \`!v\` → Cek waktu voice  
+        \`!voiceleaderboard\` / \`!vlb\` → Leaderboard voice  
+        
+        ━━━━━━━━━━━━━━━━━━
+        
+        🔊 **VOICE CONTROL**
+        \`!join\` → Bot masuk voice  
+        \`!leave\` → Bot keluar voice  
+        
+        ━━━━━━━━━━━━━━━━━━
+        `,
+        color: 0x5865F2,
+        footer: {
+          text: 'Yukii Bot • Command List'
+        },
+        timestamp: new Date()
+      }
+    ],
+    allowedMentions: { repliedUser: true },
+    flags: 4096 // 🔕 silent
+  });
+}
 });
 
 // ===== VOICE TRACK =====
