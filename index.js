@@ -4,6 +4,16 @@ const { joinVoiceChannel } = require('@discordjs/voice');
 const { createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const prism = require('prism-media');
 const { EmbedBuilder } = require('discord.js');
+const mongoose = require('mongoose');
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('MongoDB Connected ✅'))
+  .catch(err => console.log(err));
+const userSchema = new mongoose.Schema({
+  userId: String,
+  xp: { type: Number, default: 0 },
+  level: { type: Number, default: 1 }
+});
+const User = mongoose.model('User', userSchema);
 const xp = {};
 
 const client = new Client({
@@ -40,39 +50,50 @@ client.once('ready', () => {
 
 client.on('messageCreate', async (message) => {
 
-  // ===== XP SYSTEM =====
+  if (message.author.bot) return;
+
   const userId = message.author.id;
 
-  if (!xp[userId]) {
-    xp[userId] = { xp: 0, level: 1 };
+  let user = await User.findOne({ userId });
+
+  if (!user) {
+    user = new User({ userId });
+    await user.save();
   }
 
+  // tambah XP
   const randomXP = Math.floor(Math.random() * 10) + 5;
-  xp[userId].xp += randomXP;
+  user.xp += randomXP;
 
-  const nextLevelXP = xp[userId].level * 100;
+  const nextLevelXP = user.level * 100;
 
-  if (xp[userId].xp >= nextLevelXP) {
-    xp[userId].level += 1;
-    xp[userId].xp = 0;
+  if (user.xp >= nextLevelXP) {
+    user.level += 1;
+    user.xp = 0;
 
-    message.channel.send(
-      `🎉 ${message.author} naik ke level ${xp[userId].level}!`
-    );
+    message.channel.send(`🎉 ${message.author} naik ke level ${user.level}!`);
   }
+
+  await user.save();
 
   // ===== COMMAND !LEVEL =====
   if (message.content === '!level') {
-  const user = xp[userId];
-  const neededXP = user.level * 100;
+    message.reply(`📊 Level: ${user.level}\nXP: ${user.xp}/${user.level * 100}`);
+  }
 
-  message.reply(
-    `🎮 **LEVEL KAMU**\n` +
-    `Level: ${user.level}\n` +
-    `XP: ${user.xp} / ${neededXP}`
-  );
-}
-  
+  // ===== COMMAND LEADERBOARD =====
+  if (message.content === '!leaderboard') {
+    const topUsers = await User.find().sort({ level: -1, xp: -1 }).limit(5);
+
+    let text = '🏆 **Leaderboard**\n\n';
+
+    for (let i = 0; i < topUsers.length; i++) {
+      const u = await message.client.users.fetch(topUsers[i].userId);
+      text += `${i + 1}. ${u.username} - Level ${topUsers[i].level}\n`;
+    }
+
+    message.channel.send(text);
+  }
   // COMMAND JOIN
   if (message.content === '!join') {
   const channel = message.member.voice.channel;
