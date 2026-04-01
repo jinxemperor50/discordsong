@@ -7,7 +7,10 @@ const { EmbedBuilder } = require('discord.js');
 const mongoose = require('mongoose');
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB Connected ✅'))
-  .catch(err => console.log(err));
+  .catch(err => {
+    console.log('ERROR MONGO:');
+    console.log(err);
+  });
 const userSchema = new mongoose.Schema({
   userId: String,
   xp: { type: Number, default: 0 },
