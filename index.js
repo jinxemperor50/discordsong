@@ -316,6 +316,33 @@ flags:4096
 
 }
 
+// COMMAND JOIN
+if (message.content === '!join') {
+const channel = message.member.voice.channel;
+
+if (!channel) {
+  return message.reply('Masuk voice channel dulu!');
+}
+
+const connection = joinVoiceChannel({
+ channelId: channel.id,
+ guildId: message.guild.id,
+ adapterCreator: message.guild.voiceAdapterCreator,
+ });
+
+playSilent(connection);
+
+message.reply('Bot masuk & stay di voice 🔊');
+}
+
+  // COMMAND LEAVE (opsional)
+  if (message.content === '!leave') {
+    const connection = getVoiceConnection(message.guild.id);
+    if (connection) {
+      connection.destroy();
+      message.reply('Bot keluar voice ❌');
+    }
+  }
 });
 
 
