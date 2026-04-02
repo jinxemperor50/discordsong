@@ -238,16 +238,53 @@ client.on('messageCreate', async (message) => {
 
   // ===== LEADERBOARD =====
   if (message.content === '!leaderboard' || message.content === '!lb') {
-    const topUsers = await User.find().sort({ level: -1, xp: -1 }).limit(5);
 
-    let text = '🏆 **Leaderboard**\n\n';
+  const topUsers = await User.find({
+    userId: { $ne: null }
+  })
+  .sort({ level: -1, xp: -1 }) // ✅ urut dari tertinggi
+  .limit(10);
 
-    for (let i = 0; i < topUsers.length; i++) {
-      const u = await message.client.users.fetch(topUsers[i].userId);
-      text += `${i + 1}. ${u.username} - Level ${topUsers[i].level}\n`;
+  let leaderboard = '';
+
+  let rank = 1;
+
+  for (const data of topUsers) {
+    try {
+      if (!data.userId) continue;
+
+      const user = await message.client.users.fetch(data.userId);
+
+      let medal = '🔹';
+      if (rank === 1) medal = '🥇';
+      else if (rank === 2) medal = '🥈';
+      else if (rank === 3) medal = '🥉';
+
+      leaderboard += `${medal} **#${rank}** ${user.username}\n`;
+      leaderboard += `⭐ Level ${data.level} | 📊 XP ${data.xp}\n\n`;
+
+      rank++;
+
+    } catch (err) {
+      console.log('Fetch error:', err);
     }
+  }
 
-    return sendSilent(message.channel, { content: text });
+  return message.reply({
+    embeds: [
+      {
+        title: '🏆 LEADERBOARD SERVER',
+        description: leaderboard || 'Belum ada data.',
+        color: 0xFFD700,
+        footer: {
+          text: 'Top Player Ranking'
+        },
+        timestamp: new Date()
+      }
+    ],
+    allowedMentions: { repliedUser: true },
+    flags: 4096
+  });
   }
 
   // ===== VOICE TIME =====
@@ -271,44 +308,64 @@ client.on('messageCreate', async (message) => {
   // ===== VOICE LEADERBOARD =====
   if (message.content === '!voiceleaderboard' || message.content === '!vlb') {
 
-    const topUsers = await User.find({ userId: { $ne: null } })
-      .sort({ voiceTime: -1 })
-      .limit(5);
+  const topUsers = await User.find({
+    userId: { $ne: null }
+  })
+  .sort({ voiceTime: -1 }) // ✅ tertinggi dulu
+  .limit(10);
 
-    let text = '🏆 Voice Leaderboard\n\n';
-    let rank = 1;
+  let leaderboard = '';
+  let rank = 1;
 
-    for (const data of topUsers) {
+  for (const data of topUsers) {
+    try {
       if (!data.userId) continue;
 
-      try {
-        const u = await message.client.users.fetch(data.userId);
+      const user = await message.client.users.fetch(data.userId);
 
-        let totalTime = data.voiceTime || 0;
+      let totalTime = data.voiceTime || 0;
 
-        if (data.joinTime) {
-          totalTime += Date.now() - data.joinTime;
-        }
-
-        const totalSeconds = Math.floor(totalTime / 1000);
-        const minutes = Math.floor(totalSeconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const seconds = totalSeconds % 60;
-
-        let timeText = '';
-        if (hours > 0) timeText += `${hours} jam `;
-        if (minutes > 0) timeText += `${minutes} menit `;
-        if (seconds > 0) timeText += `${seconds} detik`;
-
-        text += `${rank}. ${u.username} - ${timeText}\n`;
-        rank++;
-
-      } catch (err) {
-        console.log(err);
+      if (data.joinTime) {
+        totalTime += Date.now() - data.joinTime;
       }
-    }
 
-    return sendSilent(message.channel, { content: text });
+      const totalSeconds = Math.floor(totalTime / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      const timeText = `${hours}j ${minutes}m ${seconds}d`;
+
+      let medal = '🔹';
+      if (rank === 1) medal = '🥇';
+      else if (rank === 2) medal = '🥈';
+      else if (rank === 3) medal = '🥉';
+
+      leaderboard += `${medal} **#${rank}** ${user.username}\n`;
+      leaderboard += `🎤 ${timeText}\n\n`;
+
+      rank++;
+
+    } catch (err) {
+      console.log('Fetch error:', err);
+    }
+  }
+
+  return message.reply({
+    embeds: [
+      {
+        title: '🎤 VOICE LEADERBOARD',
+        description: leaderboard || 'Belum ada data.',
+        color: 0x00FFFF,
+        footer: {
+          text: 'Top Voice Activity'
+        },
+        timestamp: new Date()
+      }
+    ],
+    allowedMentions: { repliedUser: true },
+    flags: 4096
+  });
   }
 
   // ===== JOIN =====
