@@ -476,7 +476,7 @@ adapterCreator:message.guild.voiceAdapterCreator
 playSilent(connection);
 
 return sendSilent(message.channel,{
-content:"Bot masuk voice 🔊"
+content:"Bot masuk voice & stay🔊"
 });
 
 }
