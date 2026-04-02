@@ -153,7 +153,7 @@ if(!user) user=new User({userId});
 // ===============================
 // XP SYSTEM (CHAT)
 // ===============================
-const randomXP=Math.floor(Math.random()*10)+5;
+const randomXP=Math.floor(Math.random()*5)+5;
 user.xp+=randomXP;
 
 const nextLevelXP=user.level*100;
@@ -269,7 +269,11 @@ description:`
 
 ${bar}
 `,
-color:getRankColor(user.level)
+color:getRankColor(user.level),
+thumbnail: {
+url: newState.member.user.displayAvatarURL()
+},
+timestamp: new Date()
 }
 ],
 flags:4096
