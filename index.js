@@ -17,7 +17,7 @@ const mongoose = require('mongoose');
 // ===============================
 // CONFIG
 // ===============================
-const LOG_CHANNEL_ID = 'ISI_CHANNEL_LOG_ID';
+const LOG_CHANNEL_ID = '1488934054714802357';
 
 
 // ===============================
