@@ -12,7 +12,7 @@ const {
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const prism = require('prism-media');
 const mongoose = require('mongoose');
-
+ 
 
 // ===============================
 // CONFIG
