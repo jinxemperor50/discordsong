@@ -258,27 +258,33 @@ const bar=createProgressBar(user.xp,maxXP);
 return message.reply({
 embeds:[
 {
+author:{
+name: message.author.username,
+icon_url: message.author.displayAvatarURL()
+},
 title:"📊 Rank Info",
 description:`
-👤 ${message.author.username}
+👤 **${message.author.username}**
 
-🏆 Rank: ${rank}
-⭐ Level: ${user.level}
+🏆 Rank: **${rank}**
+⭐ Level: **${user.level}**
 
-📈 XP: ${user.xp}/${maxXP}
+📈 XP: **${user.xp}/${maxXP}**
 
 ${bar}
 `,
-color:getRankColor(user.level),
-thumbnail: {
-url: newState.member.user.displayAvatarURL()
+thumbnail:{
+url: message.author.displayAvatarURL({ dynamic:true, size:256 })
 },
-timestamp: new Date()
+color:getRankColor(user.level),
+footer:{
+text:"Level System • Yukii Bot"
+},
+timestamp:new Date()
 }
 ],
 flags:4096
 });
-
 }
 
 
