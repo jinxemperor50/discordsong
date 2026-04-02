@@ -32,7 +32,9 @@ const userSchema = new mongoose.Schema({
   xp: { type: Number, default: 0 },
   level: { type: Number, default: 1 },
   voiceTime: { type: Number, default: 0 },
-  joinTime: { type: Number, default: null }
+  joinTime: { type: Number, default: null },
+  money:{type:Number,default:0},
+  lastDaily:{type:Number,default:0}
 });
 
 const User = mongoose.model("User", userSchema);
@@ -103,6 +105,44 @@ function createProgressBar(current,max,size=10){
   return "▰".repeat(progress)+"▱".repeat(empty);
 }
 
+function getLevelReward(level){
+
+let min=200;
+let max=400;
+
+if(level>=11 && level<=20){
+min=300;
+max=500;
+}
+
+else if(level>=21 && level<=30){
+min=400;
+max=600;
+}
+
+else if(level>=31 && level<=40){
+min=500;
+max=700;
+}
+
+else if(level>=41 && level<=50){
+min=600;
+max=800;
+}
+
+else if(level>=51 && level<=60){
+min=800;
+max=1000;
+}
+
+else if(level>=61){
+min=900;
+max=1100;
+}
+
+return Math.floor(Math.random()*(max-min+1))+min;
+
+}
 
 // ===============================
 // VOICE STAY SYSTEM
@@ -151,6 +191,75 @@ if(!user) user=new User({userId});
 
 
 // ===============================
+// BALANCE
+// ===============================
+if(message.content==="!money"||message.content==="!bal"){
+
+return message.reply({
+embeds:[
+{
+title:"💰 Balance",
+description:`
+👤 ${message.author.username}
+
+💵 Uang: **${user.money} coins**
+`,
+color:0x00ff00
+}
+],
+flags:4096
+});
+
+}
+
+// ===============================
+// DAILY REWARD
+// ===============================
+if(message.content==="!daily"||message.content==="!dailyreward"){
+
+const now=Date.now();
+const cooldown=86400000; // 24 jam
+
+if(now-user.lastDaily<cooldown){
+
+const remaining=cooldown-(now-user.lastDaily);
+
+const hours=Math.floor(remaining/3600000);
+const minutes=Math.floor((remaining%3600000)/60000);
+
+return message.reply({
+content:`⏳ Daily sudah diambil!\nCoba lagi dalam **${hours} jam ${minutes} menit**`,
+flags:4096
+});
+
+}
+
+const reward=Math.floor(Math.random()*200)+100;
+
+user.money+=reward;
+user.lastDaily=now;
+
+await user.save();
+
+return message.reply({
+embeds:[
+{
+title:"🎁 Daily Reward",
+description:`
+💰 Kamu mendapatkan **${reward} coins**
+
+Balance sekarang:
+**${user.money} coins**
+`,
+color:0xFFD700
+}
+],
+flags:4096
+});
+
+}
+
+// ===============================
 // XP SYSTEM (CHAT)
 // ===============================
 const randomXP=Math.floor(Math.random()*5)+5;
@@ -160,8 +269,15 @@ const nextLevelXP=user.level*100;
 
 if(user.xp>=nextLevelXP){
 
-user.level+=1;
-user.xp=0;
+user.level++;
+user.xp-=nextLevelXP;
+
+// ===============================
+// LEVEL REWARD SCALING
+// ===============================
+const rewardMoney=getLevelReward(user.level);
+
+user.money+=rewardMoney;
 
 sendBotLog(client,{
 title:"🎉 LEVEL UP!",
@@ -170,6 +286,9 @@ description:`
 
 ⭐ Level Baru: **${user.level}**
 🏆 Rank: **${getRank(user.level)}**
+
+💰 Reward
++${rewardMoney} coins
 `,
 color:0xffd700,
 thumbnail:{ url:message.author.displayAvatarURL() },
@@ -216,27 +335,35 @@ icon_url:message.author.displayAvatarURL()
 },
 title:"📊 USER PROFILE",
 description:`
+
 ━━━━━━━━━━━━━━━━━━
 
-🏆 Rank: ${rank}
-⭐ Level: ${user.level}
-📊 XP: ${user.xp}/${maxXP}
+🏆 Rank: **${rank}**
+⭐ Level: **${user.level}**
+📊 XP: **${user.xp}/${maxXP}**
 
 ${bar}
 
 ━━━━━━━━━━━━━━━━━━
 
-🎤 Voice Time
+💰 Economy
+Wallet: ${user.money}
+
+━━━━━━━━━━━━━━━━━━
+
+🎤 Voice Activity
 ${hours}j ${minutes}m ${seconds}d
 
 ━━━━━━━━━━━━━━━━━━
 
-🏅 Global Rank: #${rankPosition}
+🏅 Global Rank: **#${rankPosition}**
 
 ━━━━━━━━━━━━━━━━━━
 `,
 color:getRankColor(user.level),
-footer:{ text:"Profile System • Yukii Bot" },
+footer:{
+text:"Profile System • Yukii Bot"
+},
 timestamp:new Date()
 }
 ],
@@ -304,15 +431,19 @@ title:"📖 Command List",
 description:`
 🎮 GENERAL
 !help
-!profile
+!profile | !p
 
 🏆 LEVEL
-!level
+!level | !lv
 !leaderboard
 
+💰 ECONOMY
+!money | !bal
+!dailyreward | !daily
+
 🎤 VOICE
-!voice
-!voiceleaderboard
+!voice | !v
+!voiceleaderboard | !vlb
 
 🔊 VOICE CONTROL
 !join
