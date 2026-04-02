@@ -316,92 +316,278 @@ flags:4096
 
 }
 
-// COMMAND JOIN
-if (message.content === '!join') {
-const channel = message.member.voice.channel;
+// ===============================
+// LEVEL LEADERBOARD
+// ===============================
+if (message.content === '!leaderboard' || message.content === '!lb') {
 
-if (!channel) {
-  return message.reply('Masuk voice channel dulu!');
+const topUsers = await User.find({
+userId: { $ne: null }
+})
+.sort({ level: -1, xp: -1 })
+.limit(10);
+
+let leaderboard = '';
+let rank = 1;
+
+for (const data of topUsers) {
+
+try{
+
+const userFetch = await message.client.users.fetch(data.userId);
+
+let medal='🔹';
+if(rank===1) medal='🥇';
+else if(rank===2) medal='🥈';
+else if(rank===3) medal='🥉';
+
+leaderboard+=`${medal} **#${rank} ${userFetch.username}**\n`;
+leaderboard+=`⭐ Level ${data.level} | 📊 XP ${data.xp}\n\n`;
+
+rank++;
+
+}catch(err){
+console.log(err);
 }
 
-const connection = joinVoiceChannel({
- channelId: channel.id,
- guildId: message.guild.id,
- adapterCreator: message.guild.voiceAdapterCreator,
- });
+}
+
+return message.reply({
+embeds:[
+{
+title:"🏆 SERVER LEADERBOARD",
+description:leaderboard||"Belum ada data.",
+color:0xFFD700,
+timestamp:new Date()
+}
+],
+flags:4096
+});
+
+}
+
+// ===============================
+// VOICE TIME
+// ===============================
+if(message.content==="!voice"||message.content==="!v"){
+
+let totalTime=user.voiceTime;
+
+if(user.joinTime){
+totalTime+=Date.now()-user.joinTime;
+}
+
+const totalSeconds=Math.floor(totalTime/1000);
+const minutes=Math.floor(totalSeconds/60);
+
+return sendSilent(message.channel,{
+content:`🎤 Kamu sudah voice selama **${minutes} menit**`
+});
+
+}
+
+// ===============================
+// VOICE LEADERBOARD
+// ===============================
+if(message.content==="!voiceleaderboard"||message.content==="!vlb"){
+
+const topUsers=await User.find({
+userId:{ $ne:null }
+})
+.sort({voiceTime:-1})
+.limit(10);
+
+let leaderboard="";
+let rank=1;
+
+for(const data of topUsers){
+
+try{
+
+const userFetch=await message.client.users.fetch(data.userId);
+
+let totalTime=data.voiceTime||0;
+
+if(data.joinTime){
+totalTime+=Date.now()-data.joinTime;
+}
+
+const minutes=Math.floor(totalTime/60000);
+
+let medal='🔹';
+if(rank===1) medal='🥇';
+else if(rank===2) medal='🥈';
+else if(rank===3) medal='🥉';
+
+leaderboard+=`${medal} **#${rank} ${userFetch.username}**\n`;
+leaderboard+=`🎤 ${minutes} menit\n\n`;
+
+rank++;
+
+}catch(err){
+console.log(err);
+}
+
+}
+
+return message.reply({
+embeds:[
+{
+title:"🎤 VOICE LEADERBOARD",
+description:leaderboard||"Belum ada data.",
+color:0x00ffff,
+timestamp:new Date()
+}
+],
+flags:4096
+});
+
+}
+
+// ===============================
+// JOIN VOICE
+// ===============================
+if(message.content==="!join"){
+
+const channel=message.member.voice.channel;
+
+if(!channel){
+return sendSilent(message.channel,{
+content:"Masuk voice channel dulu!"
+});
+}
+
+const connection=joinVoiceChannel({
+channelId:channel.id,
+guildId:message.guild.id,
+adapterCreator:message.guild.voiceAdapterCreator
+});
 
 playSilent(connection);
 
-message.reply('Bot masuk & stay di voice 🔊');
+return sendSilent(message.channel,{
+content:"Bot masuk voice 🔊"
+});
+
 }
 
-  // COMMAND LEAVE (opsional)
-  if (message.content === '!leave') {
-    const connection = getVoiceConnection(message.guild.id);
-    if (connection) {
-      connection.destroy();
-      message.reply('Bot keluar voice ❌');
-    }
-  }
+// ===============================
+// LEAVE VOICE
+// ===============================
+if(message.content==="!leave"){
+
+const connection=getVoiceConnection(message.guild.id);
+
+if(connection){
+connection.destroy();
+
+return sendSilent(message.channel,{
+content:"Bot keluar voice ❌"
+});
+}
+
+}
+  
 });
 
 
 // ===============================
 // VOICE TRACKING
 // ===============================
-client.on("voiceStateUpdate", async(oldState,newState)=>{
+client.on("voiceStateUpdate", async (oldState, newState) => {
 
-if(!newState.member||newState.member.user.bot) return;
+if (!newState.member || newState.member.user.bot) return;
 
-const userId=newState.id;
+const userId = newState.id;
 
-let user=await User.findOne({userId});
-if(!user) user=new User({userId});
+let user = await User.findOne({ userId });
+if (!user) user = new User({ userId });
 
 
-// join voice
-if(!oldState.channelId&&newState.channelId){
-user.joinTime=Date.now();
+// ===============================
+// JOIN VOICE
+// ===============================
+if (!oldState.channelId && newState.channelId) {
+user.joinTime = Date.now();
 }
 
 
-// leave voice
-if(oldState.channelId&&!newState.channelId){
+// ===============================
+// LEAVE VOICE
+// ===============================
+if (oldState.channelId && !newState.channelId) {
 
-if(user.joinTime){
+if (user.joinTime) {
 
-const duration=Date.now()-user.joinTime;
+const duration = Date.now() - user.joinTime;
 
-user.voiceTime+=duration;
+user.voiceTime += duration;
 
-const minutes=Math.floor(duration/60000);
+const minutes = Math.floor(duration / 60000);
+const seconds = Math.floor((duration % 60000) / 1000);
 
-const voiceXP=minutes*2;
 
-user.xp+=voiceXP;
+// ===============================
+// VOICE XP
+// ===============================
+const voiceXP = minutes * 2;
 
-const nextLevelXP=user.level*100;
+user.xp += voiceXP;
 
-if(user.xp>=nextLevelXP){
+const nextLevelXP = user.level * 100;
+
+
+// ===============================
+// DETAIL REPORT
+// ===============================
+sendBotLog(client, {
+title: "🎤 Voice Activity",
+description: `
+👤 User: **${newState.member.user.username}**
+
+⏱️ Durasi Voice
+${minutes} menit ${seconds} detik
+
+⭐ EXP Didapat
++${voiceXP} XP
+
+📊 Total Voice
+${Math.floor(user.voiceTime / 60000)} menit
+`,
+color: 0x00ffff,
+thumbnail: {
+url: newState.member.user.displayAvatarURL()
+},
+timestamp: new Date()
+});
+
+
+// ===============================
+// LEVEL UP CHECK
+// ===============================
+if (user.xp >= nextLevelXP) {
 
 user.level++;
-user.xp=0;
+user.xp = 0;
 
-sendBotLog(client,{
-title:"🎤 Voice Level Up",
-description:`
-🎧 ${newState.member.user.username}
+sendBotLog(client, {
+title: "🎉 Voice Level Up",
+description: `
+🎧 **${newState.member.user.username}**
 
-⭐ Level Baru: ${user.level}
-🏆 Rank: ${getRank(user.level)}
+⭐ Level Baru: **${user.level}**
+🏆 Rank: **${getRank(user.level)}**
 `,
-color:0x00ffff,
-timestamp:new Date()
+color: 0xffd700,
+thumbnail: {
+url: newState.member.user.displayAvatarURL()
+},
+timestamp: new Date()
 });
 
 }
 
-user.joinTime=null;
+user.joinTime = null;
 
 }
 
