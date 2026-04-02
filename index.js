@@ -311,43 +311,40 @@ client.on('messageCreate', async (message) => {
   const topUsers = await User.find({
     userId: { $ne: null }
   })
-  .sort({ voiceTime: -1 }) // ✅ tertinggi dulu
+  .sort({ voiceTime: -1 }) // urut dari terbesar
   .limit(10);
 
   let leaderboard = '';
   let rank = 1;
 
   for (const data of topUsers) {
+
     try {
-      if (!data.userId) continue;
 
       const user = await message.client.users.fetch(data.userId);
 
       let totalTime = data.voiceTime || 0;
 
+      // kalau masih di voice
       if (data.joinTime) {
         totalTime += Date.now() - data.joinTime;
       }
 
-      const totalSeconds = Math.floor(totalTime / 1000);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-
-      const timeText = `${hours}j ${minutes}m ${seconds}d`;
+      // ===== HITUNG MENIT =====
+      const minutes = Math.floor(totalTime / 60000);
 
       let medal = '🔹';
       if (rank === 1) medal = '🥇';
       else if (rank === 2) medal = '🥈';
       else if (rank === 3) medal = '🥉';
 
-      leaderboard += `${medal} **#${rank}** ${user.username}\n`;
-      leaderboard += `🎤 ${timeText}\n\n`;
+      leaderboard += `${medal} **#${rank} ${user.username}**\n`;
+      leaderboard += `🎤 ${minutes} menit\n\n`;
 
       rank++;
 
     } catch (err) {
-      console.log('Fetch error:', err);
+      console.log(err);
     }
   }
 
@@ -358,7 +355,7 @@ client.on('messageCreate', async (message) => {
         description: leaderboard || 'Belum ada data.',
         color: 0x00FFFF,
         footer: {
-          text: 'Top Voice Activity'
+          text: 'Voice Activity Ranking'
         },
         timestamp: new Date()
       }
@@ -366,7 +363,7 @@ client.on('messageCreate', async (message) => {
     allowedMentions: { repliedUser: true },
     flags: 4096
   });
-  }
+}
 
   // ===== JOIN =====
   if (message.content === '!join') {
