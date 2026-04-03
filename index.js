@@ -730,11 +730,15 @@ userData.money += bonusCoin;
 await userData.save();
 
 // kirim notif
-const channel = member.guild.channels.cache.get(BOT_LOG_CHANNEL);
+sendBotLog(client,{
+title:"🎁 Voice Bonus",
+description:`
+${member} mendapat **${bonusCoin} coins**
 
-sendSilent(channel, {
-content: `🎁 ${member} mendapat **${bonusCoin} coins** dari voice activity!`,
-allowedMentions: { users: [member.id] }
+🎤 Reward dari voice activity
+`,
+color:0x00ffff,
+timestamp:new Date()
 });
 
 }, 3600000); // 60 menit
