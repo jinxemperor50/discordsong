@@ -730,7 +730,9 @@ userData.money += bonusCoin;
 await userData.save();
 
 // kirim notif
-sendSilent(member.guild.systemChannel, {
+const channel = member.guild.channels.cache.get(BOT_LOG_CHANNEL);
+
+sendSilent(channel, {
 content: `🎁 ${member} mendapat **${bonusCoin} coins** dari voice activity!`,
 allowedMentions: { users: [member.id] }
 });
