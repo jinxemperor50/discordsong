@@ -105,6 +105,54 @@ function createProgressBar(current,max,size=10){
   return "▰".repeat(progress)+"▱".repeat(empty);
 }
 
+// ===============================
+// PROFESSIONAL XP SYSTEM
+// ===============================
+async function addXP(user, xpAmount, client, member){
+
+user.xp += xpAmount;
+
+let levelUp = false;
+
+while(user.xp >= user.level * 100){
+
+const neededXP = user.level * 100;
+
+user.xp -= neededXP;
+user.level++;
+
+levelUp = true;
+
+// ===============================
+// LEVEL REWARD
+// ===============================
+const rewardMoney = getLevelReward(user.level);
+user.money += rewardMoney;
+
+sendBotLog(client,{
+title:"🎉 LEVEL UP!",
+description:`
+👤 **${member.user.username}**
+
+⭐ Level Baru: **${user.level}**
+🏆 Rank: **${getRank(user.level)}**
+
+💰 Reward
++${rewardMoney} coins
+`,
+color:0xffd700,
+thumbnail:{
+url:member.user.displayAvatarURL()
+},
+timestamp:new Date()
+});
+
+}
+
+return levelUp;
+
+}
+
 function getLevelReward(level){
 
 let min=200;
@@ -262,8 +310,9 @@ flags:4096
 // ===============================
 // XP SYSTEM (CHAT)
 // ===============================
-const randomXP=Math.floor(Math.random()*5)+5;
-user.xp+=randomXP;
+const randomXP = Math.floor(Math.random()*5)+5;
+
+await addXP(user, randomXP, client, message.member);
 
 const nextLevelXP=user.level*100;
 
@@ -673,7 +722,7 @@ const seconds = Math.floor((duration % 60000) / 1000);
 // ===============================
 const voiceXP = minutes * 2;
 
-user.xp += voiceXP;
+await addXP(user, voiceXP, client, newState.member);
 
 const nextLevelXP = user.level * 100;
 
@@ -706,10 +755,16 @@ timestamp: new Date()
 // ===============================
 // LEVEL UP CHECK
 // ===============================
-if (user.xp >= nextLevelXP) {
+let leveledUp = false;
 
+while (user.xp >= user.level * 100) {
+
+const nextLevelXP = user.level * 100;
+
+user.xp -= nextLevelXP;
 user.level++;
-user.xp = 0;
+
+leveledUp = true;
 
 sendBotLog(client, {
 title: "🎉 Voice Level Up",
@@ -718,6 +773,9 @@ description: `
 
 ⭐ Level Baru: **${user.level}**
 🏆 Rank: **${getRank(user.level)}**
+
+📊 XP Sekarang
+${user.xp}/${user.level * 100}
 `,
 color: 0xffd700,
 thumbnail: {
