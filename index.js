@@ -19,6 +19,11 @@ const mongoose = require('mongoose');
 // ===============================
 const LOG_CHANNEL_ID = '1488934054714802357';
 
+// ===============================
+// VOICE BONUS TIMER
+// ===============================
+const voiceTimers = {};
+
 
 // ===============================
 // DATABASE
@@ -698,9 +703,40 @@ if (!user) user = new User({ userId });
 // JOIN VOICE
 // ===============================
 if (!oldState.channelId && newState.channelId) {
+
 user.joinTime = Date.now();
+
+const userId = newState.id;
+
+voiceTimers[userId] = setInterval(async () => {
+
+let member = newState.member;
+
+let userData = await User.findOne({ userId });
+
+if (!member.voice.channel) {
+clearInterval(voiceTimers[userId]);
+delete voiceTimers[userId];
+return;
 }
 
+// ===============================
+// BONUS COIN
+// ===============================
+const bonusCoin = 50;
+
+userData.money += bonusCoin;
+
+await userData.save();
+
+// kirim notif
+sendSilent(member.guild.systemChannel, {
+content: `🎁 ${member} mendapat **${bonusCoin} coins** dari voice activity!`,
+allowedMentions: { users: [member.id] }
+});
+
+}, 3600000); // 60 menit
+}
 
 // ===============================
 // LEAVE VOICE
@@ -716,6 +752,12 @@ user.voiceTime += duration;
 const minutes = Math.floor(duration / 60000);
 const seconds = Math.floor((duration % 60000) / 1000);
 
+// ===============================
+// VOICE COIN REWARD
+// ===============================
+const coinReward = Math.floor(minutes / 10) * 3;
+
+user.money += coinReward;
 
 // ===============================
 // VOICE XP
@@ -740,6 +782,9 @@ ${minutes} menit ${seconds} detik
 
 ⭐ EXP Didapat
 +${voiceXP} XP
+
+💰 Coin Reward
++${coinReward} coins
 
 📊 Total Voice
 ${Math.floor(user.voiceTime / 60000)} menit
