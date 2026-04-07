@@ -708,6 +708,9 @@ user.joinTime = Date.now();
 
 const userId = newState.id;
 
+// CEGAH TIMER DUPLIKAT
+if (voiceTimers[userId]) return;
+
 voiceTimers[userId] = setInterval(async () => {
 
 let member = newState.member;
@@ -719,6 +722,7 @@ clearInterval(voiceTimers[userId]);
 delete voiceTimers[userId];
 return;
 }
+console.log("VOICE TIMER START:", userId);
 
 // ===============================
 // BONUS COIN
